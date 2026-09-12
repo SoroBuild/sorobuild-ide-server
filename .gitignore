@@ -6,3 +6,12 @@ temps/
 # Added by cargo
 
 /target
+
+.env
+.env.*
+!.env.example
+data/
+test-results/
+playwright-report/
+*.local.json
+*access-tokens.json

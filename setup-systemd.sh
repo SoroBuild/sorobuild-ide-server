@@ -1,61 +1,26 @@
-#!/bin/bash
-
-SERVICE_NAME="sorobuild-ide-server"
-APP_DIR="/home/tinkerpal/sorobuild-ide-backend"
-REPO_URL="git@github.com:Jideotetic/sorobuild-ide-backend.git"
-DOCKER_BIN="/usr/bin/docker"
-SERVICE_FILE="/etc/systemd/system/${SERVICE_NAME}.service"
-
-if [ ! -d "$APP_DIR" ]; then
-  echo "❌ Error: App directory $APP_DIR does not exist."
-  exit 1
-fi
-
-if [ ! -x "$DOCKER_BIN" ]; then
-  echo "❌ Error: Docker not found at $DOCKER_BIN"
-  exit 1
-fi
-
-echo "🧼 Cleaning up unused Docker resources..."
-docker system prune -f
-
-echo "🔄 Pulling latest changes..."
+#!/usr/bin/env bash
+set -euo pipefail
+APP_DIR="${1:?Usage: sudo ./setup-systemd.sh /absolute/path/to/API}"
+[[ "$EUID" -eq 0 ]] || { echo 'Run as root.' >&2; exit 1; }
+[[ "$APP_DIR" = /* && "$APP_DIR" != *'"'* && "$APP_DIR" != *'%'* && "$APP_DIR" != *$'\n'* ]] || { echo 'Invalid absolute path.' >&2; exit 1; }
 cd "$APP_DIR"
-git pull origin main || echo "⚠️ Git pull failed or not a git repo, continuing..."
-
-echo "🔧 Creating systemd service file at $SERVICE_FILE..."
-
-# Properly write the service file with variables expanded
-sudo tee "$SERVICE_FILE" > /dev/null <<EOF
+DOCKER_BIN="$(command -v docker)"
+"$DOCKER_BIN" compose config --quiet
+cat > /etc/systemd/system/sorobuild-ide-server.service <<SERVICE
 [Unit]
-Description=Docker Compose App - $SERVICE_NAME
+Description=Sorobuild IDE API
 Requires=docker.service
-After=docker.service
-
+After=docker.service network-online.target
 [Service]
 Type=simple
-WorkingDirectory=$APP_DIR
-# ExecStartPre=$DOCKER_BIN build --no-cache -t socketfi-server .
-ExecStart=$DOCKER_BIN compose up --build
-ExecStop=$DOCKER_BIN compose down
-Restart=always
+WorkingDirectory="$APP_DIR"
+ExecStart=$DOCKER_BIN compose up --no-build
+ExecStop=$DOCKER_BIN compose stop -t 650
+Restart=on-failure
 RestartSec=5
-TimeoutStartSec=0
-
+TimeoutStopSec=670
 [Install]
 WantedBy=multi-user.target
-EOF
-
-echo "🔄 Reloading systemd and enabling service..."
-sudo systemctl daemon-reload
-sudo systemctl enable ${SERVICE_NAME}.service
-
-echo "✅ Systemd service '$SERVICE_NAME' has been created and enabled."
-read -p "🚀 Do you want to start the app now? (y/n): " choice
-
-if [[ "$choice" =~ ^[Yy]$ ]]; then
-  sudo systemctl start ${SERVICE_NAME}.service
-  echo "✅ Service started. You can run: sudo systemctl status ${SERVICE_NAME}.service"
-else
-  echo "ℹ️ You can start it manually with: sudo systemctl start ${SERVICE_NAME}.service"
-fi
+SERVICE
+systemctl daemon-reload
+echo 'Service installed. Review configuration, then explicitly enable/start sorobuild-ide-server.service.'

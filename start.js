@@ -1,0 +1,17 @@
+import 'dotenv/config';
+import {createLanguageService} from './lib/language.js';
+import { createApp } from './app.js';
+import { FileStore, MongoStore } from './lib/store.js';
+import { runProcess } from './lib/runner.js';
+const production = process.env.NODE_ENV === 'production';
+if (production && !process.env.ALLOWED_ORIGINS) throw new Error('Set ALLOWED_ORIGINS in production.');
+if (production && !process.env.DB_URI && process.env.STORAGE_DRIVER !== 'file') throw new Error('Set DB_URI or explicitly set STORAGE_DRIVER=file.');
+const store = process.env.DB_URI ? new MongoStore(process.env.DB_URI) : new FileStore(process.env.DATA_DIR || './data');
+await store.init();
+if (production && !(await runProcess('docker', ['image', 'inspect', process.env.SOROBUILD_RUNNER_IMAGE || 'sorobuild-runner:25'], { timeout: 10000 })).success) throw new Error('Build the runner image and verify Docker access before starting.');
+const language=createLanguageService();
+const app = createApp({ store, language, origins: (process.env.ALLOWED_ORIGINS || 'http://localhost:5173,http://127.0.0.1:5173').split(',').map(s => s.trim()) });
+const server = app.listen(Number(process.env.PORT || 3000), process.env.HOST || '127.0.0.1', () => console.log('Sorobuild API started'));
+server.requestTimeout = 30000;
+const shutdown = () => { server.close(async () => { await language.close(); await store.close(); process.exit(0); }); setTimeout(() => process.exit(1), 650000).unref(); };
+process.on('SIGTERM', shutdown); process.on('SIGINT', shutdown);

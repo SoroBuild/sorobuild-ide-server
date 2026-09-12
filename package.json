@@ -1,39 +1,44 @@
 {
-	"name": "sorobuild-ide-backend",
-	"version": "1.0.0",
-	"description": "",
-	"main": "server.js",
-	"scripts": {
-		"start": "node server.js",
-		"dev": "nodemon server.js",
-		"lint": "eslint ."
-	},
-	"keywords": [],
-	"author": "",
-	"license": "ISC",
-	"type": "module",
-	"dependencies": {
-		"@iarna/toml": "^2.2.5",
-		"archiver": "^7.0.1",
-		"body-parser": "^2.2.0",
-		"cors": "^2.8.5",
-		"dotenv": "^16.5.0",
-		"express": "^5.1.0",
-		"express-rate-limit": "^7.5.0",
-		"helmet": "^8.1.0",
-		"jszip": "^3.10.1",
-		"mongodb": "^6.17.0",
-		"mongoose": "^8.16.1",
-		"multer": "^2.0.1",
-		"p-queue": "^8.1.0",
-		"unzipper": "^0.12.3",
-		"uuid": "^11.1.0",
-		"vscode-languageserver-protocol": "^3.17.5",
-		"vscode-ws-jsonrpc": "^3.4.0",
-		"ws": "^8.18.2"
-	},
-	"devDependencies": {
-		"eslint": "^9.29.0",
-		"nodemon": "^3.1.10"
-	}
+  "name": "sorobuild-ide-backend",
+  "version": "1.0.0",
+  "description": "",
+  "main": "start.js",
+  "scripts": {
+    "start": "node start.js",
+    "dev": "node --watch start.js",
+    "lint": "eslint app.js start.js lib tests",
+    "test": "node --test tests/*.test.js",
+    "runner:build": "docker build -f runner.Dockerfile -t sorobuild-runner:25 ."
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "dependencies": {
+    "@iarna/toml": "^2.2.5",
+    "archiver": "^7.0.1",
+    "body-parser": "^2.2.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.5.0",
+    "express": "^5.1.0",
+    "express-rate-limit": "^7.5.0",
+    "helmet": "^8.1.0",
+    "jszip": "^3.10.1",
+    "mongodb": "^6.17.0",
+    "mongoose": "^8.16.1",
+    "multer": "^2.0.1",
+    "p-queue": "^8.1.0",
+    "unzipper": "^0.12.3",
+    "uuid": "^11.1.0",
+    "vscode-languageserver-protocol": "^3.17.5",
+    "vscode-ws-jsonrpc": "^3.4.0",
+    "ws": "^8.18.2"
+  },
+  "devDependencies": {
+    "eslint": "^9.29.0",
+    "nodemon": "^3.1.10"
+  },
+  "engines": {
+    "node": ">=22.14.0"
+  }
 }
