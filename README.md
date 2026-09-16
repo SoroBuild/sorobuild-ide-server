@@ -129,4 +129,4 @@ Runner updates must be deployed separately from the API: run `npm run runner:bui
 
 For a single Nginx reverse proxy, set `TRUST_PROXY_HOPS=1` (Compose default). Keep the API port bound to loopback so clients cannot bypass the trusted proxy. Direct local development uses `0`. Nginx must append the actual client address to `X-Forwarded-For`; the API trusts only the nearest hop for per-client rate limits.
 
-IntelliSense waits up to 90 seconds for initial indexing, then asks the analyzer directly. A successful semantic response makes the session available even when rust-analyzer has not announced global quiescence. Empty responses during startup remain retryable instead of being shown as successful analysis.
+During the first 90 seconds of a session, IntelliSense returns retryable indexing responses after at most five seconds. It then probes the analyzer directly with a 20-second request deadline. A successful semantic response makes the session available even when rust-analyzer has not announced global quiescence. Empty responses during startup remain retryable instead of being shown as successful analysis.

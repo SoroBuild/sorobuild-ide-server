@@ -17,9 +17,10 @@ try {
   finally {clearTimeout(timer);}
   console.log('Cancelled cold request releases its queue: passed');
   let completion;
-  for(let attempt=0;attempt<3;attempt++){
+  const analysisDeadline=Date.now()+240000;
+  for(let attempt=0;attempt<60;attempt++){
     try {completion=await service.request('sdk-completion', input);break;}
-    catch(error){if(error.status!==503 || attempt===2)throw error;console.log('SDK still indexing; retrying the same session');}
+    catch(error){if(error.status!==503 || attempt===59 || Date.now()>=analysisDeadline)throw error;console.log('SDK still indexing; retrying the same session');await new Promise(resolve=>setTimeout(resolve,1000));}
   }
   const {result}=completion;
   const items = Array.isArray(result) ? result : result?.items || [];
