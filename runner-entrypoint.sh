@@ -3,7 +3,11 @@ set -eu
 mkdir -p /tmp/project
 cp -R /input/. /tmp/project/
 mkdir -p /tmp/cargo
-cp -R /usr/local/cargo/registry /tmp/cargo/registry
+# rustfmt only needs workspace metadata and source files. Copying the full
+# dependency registry on every save dominates formatting time.
+if [ "${2:-}" != "fmt" ]; then
+  cp -R /usr/local/cargo/registry /tmp/cargo/registry
+fi
 export CARGO_HOME=/tmp/cargo
 cd /tmp/project
 "$@"
