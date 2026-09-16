@@ -5,6 +5,7 @@ import {createLanguageService} from '../lib/language.js';
 // Exercise the real Docker runner and SDK, not a mocked LSP response.
 const files = {};
 for (const file of ['Cargo.toml', 'Cargo.lock']) files[file] = await readFile(`runner-template/${file}`, 'utf8');
+files['Cargo.toml'] += '\n[dev-dependencies.assert_unordered]\nversion = \"0.3.5\"\n';
 files['src/lib.rs'] = '#![no_std]\nuse soroban_sdk::Env;\npub fn probe(env: Env) { env.sto }\n';
 const service = createLanguageService();
 try {

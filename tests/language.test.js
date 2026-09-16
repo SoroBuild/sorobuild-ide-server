@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {createLanguageService,validateLanguageInput} from '../lib/language.js';
+import {createLanguageService,validateLanguageInput,languageStatusError} from '../lib/language.js';
 const input={files:{'Cargo.toml':'[package]\nname="test"','src/lib.rs':'fn main() {}'},path:'src/lib.rs',method:'textDocument/completion',position:{line:0,character:3}};
 test('language input blocks invalid paths, operations and toolchain overrides',()=>{
  assert.throws(()=>validateLanguageInput({...input,path:'../secret'}));
@@ -50,4 +50,11 @@ test('cancelled analysis releases the queue and preserves the warm session',asyn
   assert.equal(starts,1);assert.equal(closes,0);assert.equal(requests,2);
  }finally{await service.close();}
  assert.equal(closes,1);
+});
+
+test('Cargo metadata failures are reported instead of declaring SDK analysis ready',()=>{
+ assert.match(languageStatusError({health:'warning',quiescent:true,message:'Failed to read Cargo metadata: no matching package named `assert_unordered` found'}),/assert_unordered.*runner cache/);
+ assert.match(languageStatusError({health:'warning',message:'Failed to read Cargo metadata: version conflict'}),/version conflict/);
+ assert.equal(languageStatusError({health:'ok',quiescent:true}),null);
+ assert.equal(languageStatusError({health:'warning',message:'proc macro expansion is unavailable'}),null);
 });

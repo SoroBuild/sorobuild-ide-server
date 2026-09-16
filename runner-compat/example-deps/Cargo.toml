@@ -1,0 +1,8 @@
+[package]
+name = "sorobuild-example-deps"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+assert_unordered = "=0.3.5"

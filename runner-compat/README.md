@@ -2,6 +2,7 @@
 
 The runner fetches these dependencies while building its image. User builds and tests remain offline.
 
+- `example-deps`: pinned `assert_unordered` dependencies used by the atomic multiswap example and required by Cargo metadata during IntelliSense analysis.
 - `sdk22`: compatibility dependencies for SDK 22 projects.
 - `bls`: the SDK 25.1 BLS example manifest and its complete lockfile, including the older rand 0.7 test dependency tree. The library here is only a stub for dependency fetching; it is not the example implementation.
 
