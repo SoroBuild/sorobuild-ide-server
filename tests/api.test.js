@@ -77,3 +77,25 @@ test('build streams compiler output before completion and keeps authentication',
  release();let rest='';while(true){const {done,value}=await reader.read();if(done)break;rest+=new TextDecoder().decode(value);}assert.equal(JSON.parse(rest.trim()).result.success,true);
  assert.equal((await fetch(`${url}/build`,{...options,headers:{'Content-Type':'application/json',Accept:'application/x-ndjson'}})).status,403);
 });
+
+test('disconnecting the editor cancels its backend language request',async t=>{
+ let entered,stopped;
+ const started=new Promise(resolve=>{entered=resolve;});
+ const cancelled=new Promise(resolve=>{stopped=resolve;});
+ const language={request:async(_id,_input,{signal})=>{
+  entered();
+  await new Promise(resolve=>{
+   const timeout=setTimeout(resolve,2000);
+   signal.addEventListener('abort',()=>{clearTimeout(timeout);stopped();resolve();},{once:true});
+  });
+  return {result:null};
+ }};
+ const {url,headers}=await harness(t,undefined,language);
+ const controller=new AbortController();
+ const pending=fetch(`${url}/language`,{method:'POST',headers,body:'{}',signal:controller.signal});
+ const rejected=assert.rejects(pending,error=>error.name==='AbortError');
+ await started;controller.abort();await rejected;
+ let timeout;
+ try {await Promise.race([cancelled,new Promise((_,reject)=>{timeout=setTimeout(()=>reject(new Error('HTTP disconnect was not propagated')),1000);})]);}
+ finally{clearTimeout(timeout);}
+});

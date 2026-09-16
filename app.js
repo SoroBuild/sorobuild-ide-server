@@ -56,7 +56,14 @@ export function createApp({ store, execute = runJob, assistant = askAssistant, o
   }));
   app.post('/api/projects/:id/language', auth, rateLimit({windowMs:60000,limit:300,standardHeaders:'draft-7',legacyHeaders:false}), async (req,res) => {
     if (!language) throw fail(503,'Rust IntelliSense is not configured.');
-    res.json(await language.request(req.params.id,req.body));
+    const controller=new AbortController();
+    const disconnected=()=>{if(!res.writableEnded)controller.abort();};
+    res.once('close',disconnected);
+    try {
+      const result=await language.request(req.params.id,req.body,{signal:controller.signal});
+      if(!controller.signal.aborted)res.json(result);
+    } catch(error) {if(!controller.signal.aborted)throw error;}
+    finally {res.removeListener('close',disconnected);}
   });
   app.post('/api/projects/:id/assistant', auth, guarded(async (req, res) => {
     await inputFiles(req); if (running >= maxJobs) throw fail(429, 'Service is busy.'); running++;

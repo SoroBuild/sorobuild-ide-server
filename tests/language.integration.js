@@ -9,7 +9,18 @@ files['src/lib.rs'] = '#![no_std]\nuse soroban_sdk::Env;\npub fn probe(env: Env)
 const service = createLanguageService();
 try {
   const input = {files, path:'src/lib.rs', method:'textDocument/completion', position:{line:2, character:32}};
-  const {result} = await service.request('sdk-completion', input);
+  const controller=new AbortController();
+  const cancelled=service.request('sdk-completion',input,{signal:controller.signal});
+  const timer=setTimeout(()=>controller.abort(),200);
+  try {await assert.rejects(cancelled,error=>error.status===499);}
+  finally {clearTimeout(timer);}
+  console.log('Cancelled cold request releases its queue: passed');
+  let completion;
+  for(let attempt=0;attempt<3;attempt++){
+    try {completion=await service.request('sdk-completion', input);break;}
+    catch(error){if(error.status!==503 || attempt===2)throw error;console.log('SDK still indexing; retrying the same session');}
+  }
+  const {result}=completion;
   const items = Array.isArray(result) ? result : result?.items || [];
   assert.ok(items.some(item => item.label.startsWith('storage')), 'Expected real Soroban Env.storage completion');
   const hover = await service.request('sdk-completion', {...input, method:'textDocument/hover', position:{line:1, character:18}});

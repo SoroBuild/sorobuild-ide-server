@@ -30,3 +30,24 @@ test('failed startup and deleted projects release language capacity',async()=>{
  }finally{await service.close();}
  assert.equal(closed,2);
 });
+
+test('cancelled analysis releases the queue and preserves the warm session',async()=>{
+ let starts=0,closes=0,requests=0,started;
+ const entered=new Promise(resolve=>{started=resolve;});
+ const service=createLanguageService({start:async()=>{starts++;return {
+  close:async()=>{closes++;},
+  request:async(_input,{signal})=>{requests++;if(requests===1){started();await new Promise((_,reject)=>signal.addEventListener('abort',()=>reject(Object.assign(new Error('cancelled'),{status:499})),{once:true}));}return {result:'storage'};}
+ };}});
+ try {
+  const active=new AbortController(),queued=new AbortController();
+  const first=service.request('counter',input,{signal:active.signal});
+  const rejectedFirst=assert.rejects(first,error=>error.status===499);
+  await entered;
+  const pending=service.request('counter',input,{signal:queued.signal});
+  const rejectedPending=assert.rejects(pending,error=>error.status===499);
+  queued.abort();active.abort();await Promise.all([rejectedFirst,rejectedPending]);
+  assert.equal((await service.request('counter',input)).result,'storage');
+  assert.equal(starts,1);assert.equal(closes,0);assert.equal(requests,2);
+ }finally{await service.close();}
+ assert.equal(closes,1);
+});
