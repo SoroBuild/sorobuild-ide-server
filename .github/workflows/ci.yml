@@ -17,3 +17,4 @@ jobs:
       - run: npm test
       - run: npm run runner:build
       - run: node tests/runner.integration.js
+      - run: node tests/language.integration.js
