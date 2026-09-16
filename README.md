@@ -126,3 +126,7 @@ Quickstart documentation: https://developers.stellar.org/docs/tools/quickstart/g
 The optional local transaction explorer is at `http://localhost:8000/lab/transactions-explorer`. For an existing container, start it with `docker exec sorobuild-sandbox supervisorctl start stellar-lab`. The bundled explorer currently fails to render transaction details in verification, so the IDE does not offer Local Sandbox explorer links. Public-network transactions link to their corresponding hosted explorers.
 
 Runner updates must be deployed separately from the API: run `npm run runner:build` before `docker compose up -d --build --force-recreate api`. Restarting the API clears existing analyzer sessions so they use the new dependency cache. The runner also caches `assert_unordered` for the atomic multiswap example. Missing cached dependencies are reported in the editor analysis status.
+
+For a single Nginx reverse proxy, set `TRUST_PROXY_HOPS=1` (Compose default). Keep the API port bound to loopback so clients cannot bypass the trusted proxy. Direct local development uses `0`. Nginx must append the actual client address to `X-Forwarded-For`; the API trusts only the nearest hop for per-client rate limits.
+
+IntelliSense waits up to 90 seconds for initial indexing, then asks the analyzer directly. A successful semantic response makes the session available even when rust-analyzer has not announced global quiescence. Empty responses during startup remain retryable instead of being shown as successful analysis.

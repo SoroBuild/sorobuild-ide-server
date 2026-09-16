@@ -10,8 +10,9 @@ import { decodeArchive, encodeArchive } from './lib/archive.js';
 import { runJob } from './lib/runner.js';
 import { askAssistant } from './lib/assistant.js';
 
-export function createApp({ store, execute = runJob, assistant = askAssistant, origins = ['http://localhost:5173', 'http://127.0.0.1:5173'], maxJobs = 2, language, fundAccount = fundTestAccount }  = {}) {
+export function createApp({ store, execute = runJob, assistant = askAssistant, origins = ['http://localhost:5173', 'http://127.0.0.1:5173'], maxJobs = 2, language, trustProxy = false, fundAccount = fundTestAccount }  = {}) {
   const app = express(), locks = new Set(); let running = 0;
+  app.set('trust proxy', trustProxy);
   app.disable('x-powered-by'); app.use(helmet());
   app.use((req, res, next) => { res.set('Cache-Control', 'no-store'); if (req.headers.origin && !origins.includes(req.headers.origin)) return next(fail(403, 'Origin is not allowed.')); next(); });
   app.use(cors({ origin: origins, allowedHeaders: ['Content-Type', 'Authorization', 'X-Project-Revision'], exposedHeaders: ['X-Project-Revision'] }));

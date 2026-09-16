@@ -99,3 +99,15 @@ test('disconnecting the editor cancels its backend language request',async t=>{
  try {await Promise.race([cancelled,new Promise((_,reject)=>{timeout=setTimeout(()=>reject(new Error('HTTP disconnect was not propagated')),1000);})]);}
  finally{clearTimeout(timeout);}
 });
+
+
+test('single-proxy deployment rate limits clients separately and ignores spoofed earlier hops',async t=>{
+ const app=createApp({store:{},trustProxy:1});
+ const server=app.listen(0,'127.0.0.1');await new Promise(r=>server.once('listening',r));
+ t.after(()=>new Promise(r=>server.close(r)));
+ const url=`http://127.0.0.1:${server.address().port}/api/health`;
+ const remaining=async forwarded=>{const response=await fetch(url,{headers:{'X-Forwarded-For':forwarded}});assert.equal(response.status,200);return Number(response.headers.get('ratelimit').match(/remaining=(\d+)/)[1]);};
+ assert.equal(await remaining('198.51.100.10'),119);
+ assert.equal(await remaining('198.51.100.20'),119);
+ assert.equal(await remaining('203.0.113.5, 198.51.100.10'),118);
+});
